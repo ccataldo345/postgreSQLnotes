@@ -1,0 +1,89 @@
+PostgreSQL notes:
+https://www.postgresqltutorial.com/postgresql-administration/
+
+alias cpostgresql='sudo service postgresql start && sudo -u postgres psql'
+
+Import file .sql (restore database):
+	create a new database named dvdrental:
+		create database dvdrental;
+			pg_restore -c  -d dvdrental -v "dvdrental.tar" -W
+	sudo -u postgres pg_restore -c  -d dvdrental -v "dvdrental.tar" -W 
+	(pw = Linux password)
+
+Export database :
+	sudo -u postgres pg_dump -W -F t dvdrental > ~/postgresql/dvdrental.sql
+
+Execute command without enter postgres prompt:
+	sudo -u postgres psql -d dvdrental -c "SELECT * from language"
+	
+Comment line: 		-- ...		OR 		/* ... */
+
+List of DBs:		\l+
+
+Use / connect to a DB:		\c dvdrental
+	
+List tables:		\dt+ 
+
+List available schemas:		\dn
+
+List all users and their assign roles:		\du
+
+Print NULL values as [null], instead of blank:		\pset null '[null]'
+
+List all column names of a table: 		SELECT * FROM customer where false;
+
+select customer_id, store_id, email from customer where first_name = 'Nancy' and last_name = 'Thomas';
+
+Note: '2007-02-18' is the same as '2007-02-18 00:00:00'
+
+SELECT * FROM customer WHERE last_name = 'Williams' OR last_name = 'Taylor' OR last_name = 'Andrews';
+	Alternatively, you can write:
+		SELECT * FROM customer WHERE last_name IN ('Williams' , 'Taylor' , 'Andrews');
+
+SELECT rental_id, customer_id FROM rental WHERE rental_date>='2005-05-26' AND return_date < '2005-05-29';
+
+List only the first ten lines (head -10):
+	SELECT * FROM customer limit 10;
+	sudo -u postgres psql -d dvdrental -c "SELECT * FROM customer;" | head -10
+
+Wild cards - use with LIKE :
+	%			= any string
+	_   			= any char
+	ILIKE 		= non sensitive
+		SELECT title, description, rental_rate FROM film WHERE description LIKE '%Drama%' LIMIT 10;
+		sudo -u postgres psql -d dvdrental -c "SELECT title, description, rental_rate FROM film WHERE description LIKE '%Drama%';" | head -10 | grep Drama
+		SELECT * FROM film WHERE title ILIKE '_he%';
+
+IS NULL - IS NOT NULL
+
+ORDER BY length DESC
+
+INNER JOIN ( = JOIN; gets only the matching rows, will not contain NULLs !!!) :
+	SELECT table-name1.column.name1(id), column-name2, column-name3 
+	FROM table-name1
+	INNER JOIN table-name2
+	ON table-name1.column-name1 = table-name2.column-nameX(id)
+			SELECT customer.customer_id, first_name, last_name, payment_id, amount FROM customer INNER JOIN payment ON customer.customer_id = payment.customer_id LIMIT 10;
+			SELECT customer.customer_id, first_name, last_name, payment_id, amount FROM customer INNER JOIN payment ON customer.customer_id = payment.customer_id WHERE payment_date BETWEEN '2007-02-18 8:00:00' AND '2007-02-25 17:00:00' ORDER BY customer_id LIMIT 10;
+
+USING
+	ON table-name1.column.name1 = table-name2.column.nameX(id) is equal to USING (column-name(id))
+	ON customer.customer_id = payment.customer_id >>> USING (customer_id)
+
+Join multiple tables:
+	SELECT f.film_id, title, name AS category FROM film f JOIN film_category fc USING (film_id) JOIN category c USING (category_id) WHERE name = 'Drama' LIMIT 10;
+
+SELECT c.customer_id, first_name, last_name, address, district, amount, round(amount*.90, 2)discounted_amt FROM customer c JOIN payment p ON p.customer_id = c.customer_id JOIN address a ON a.address_id = c.address_id ORDER BY 6 DESC LIMIT 20; 
+
+LEFT JOIN (all left-table rows + right-table with null values):
+	SELECT f.film_id, title, inventory_id FROM film f LEFT JOIN inventory i USING (film_id) WHERE inventory_id IS NULL ORDER BY 1;
+
+SELECT film_id, title, amount FROM payment JOIN rental USING (rental_id) JOIN inventory USING (inventory_id) RIGHT JOIN film USING (film_id) WHERE title LIKE 'F%' OR title LIKE 'G%' ORDER BY amount DESC LIMIT 20;
+
+FULL JOIN = LEFT JOIN + RIGHT JOIN
+
+UNION = inserts at the end of a table, another table ROWS (must have same number of columns and data type!)
+UNION ALL = do not removes duplicates
+
+
+
